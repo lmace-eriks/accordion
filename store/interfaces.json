@@ -1,0 +1,6 @@
+{
+  "accordion": {
+    "component": "Accordion",
+    "composition": "children"
+  }
+}
