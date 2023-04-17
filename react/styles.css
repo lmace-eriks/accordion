@@ -1,43 +1,19 @@
-.buttonContainer {
-    display: flex;
-    justify-content: space-around;
-}
+.container {}
 
-.button {
-    display: flex;
-    gap: 1rem;
-    padding: 0.5rem;
-    border: none;
-    border-bottom: 3px solid white;
-    background: transparent;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
+.buttonWindowWrapper {}
 
-.buttonActive, button:hover {
-    border-bottom: 3px solid #ec1d24;
-}
+.button {}
 
-.arrow {
-    transition: transform 300ms ease-in-out;
-}
+.buttonText {}
 
-.buttonActive .arrow {
+.arrow {}
+
+.button[aria-expanded="true"] .arrow {
     transform: rotate(90deg);
 }
 
-.menuContainer {
-    display: grid;
-    place-items: center;
-    overflow-y: hidden;
-    margin-top: 2rem;
-    border-bottom: 1px solid white;
+.button:hover {}
 
-    transition: height 300ms ease-in-out;
-}
+.window {}
 
-.button:focus-visible {
-    outline-offset: 4px;
-    outline: 2px solid #ec1d24;
-}
+.childWrapper {}

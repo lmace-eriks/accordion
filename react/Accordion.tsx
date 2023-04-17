@@ -1,100 +1,115 @@
 import React, { ReactChildren, useEffect, useRef, useState } from "react";
-import { canUseDOM } from "vtex.render-runtime";
+// import { canUseDOM } from "vtex.render-runtime";
 
 // Styles
 import styles from "./styles.css";
 
 interface AccordionProps {
-  mainMenu: Array<string>
-  vtexMenuClass: string
+  sectionTitles: Array<SectionTitleObject>
+  blockClass: string
   children: ReactChildren | any
+  openFirstChild: Boolean
 }
 
-const Accordion: StorefrontFunctionComponent<AccordionProps> = ({ mainMenu, children, vtexMenuClass }) => {
+interface SectionTitleObject {
+  text: string
+}
+
+const Accordion: StorefrontFunctionComponent<AccordionProps> = ({ sectionTitles, children, blockClass, openFirstChild }) => {
   const openGate = useRef(true);
-  const infoWindow: any = useRef();
-  const menuNumber: any = useRef(-1);
-  const [activeChild, setActiveChild] = useState<any>();
+  const childRefs = useRef<any>([]);
+  const [expandedList, setExpandedList] = useState<Array<Boolean>>(sectionTitles.map(() => false));
+  const [childHeight, setChildHeight] = useState<number>(0);
 
   useEffect(() => {
     if (!openGate.current) return;
     openGate.current = false;
 
+    if (openFirstChild) setFirstToOpen();
   }, []);
 
-  const handleClick = (e: any) => {
-    const clicked: number = Number(e.currentTarget.dataset.index);
-    const button = e.currentTarget;
+  const setFirstToOpen = () => {
+    const expandedListTemp = [...expandedList];
+    expandedListTemp[0] = true;
 
-    if (menuNumber.current === clicked) {
-      closeWindow(button);
-      return;
-    }
-
-    menuNumber.current = clicked;
-    setActiveChild(children[clicked]);
-    setTimeout(() => { openWindow(button) }, 1);
+    setExpandedList(expandedListTemp);
+    setChildHeight(childRefs.current[0].offsetHeight);
   }
 
-  const openWindow = (button: any) => {
-    if (!canUseDOM) return;
+  const handleClick = (index: number) => {
+    const expandedListTemp = expandedList.map(() => false);
+    const isExpanded = expandedList[index];
 
-    // Inactivate All Arrows
-    const allButtons: any = Array.from(document.querySelectorAll(`.${styles.button}`));
-    allButtons.forEach((button: any) => {
-      button.setAttribute("aria-expanded", "false");
-      button.classList.remove(`${styles.buttonActive}`);
-    });
+    if (!isExpanded) expandedListTemp[index] = true;
 
-    // Activate Arrow
-    button.classList.add(`${styles.buttonActive}`);
-
-    const activeMenuElement: any = document.querySelector(`.${vtexMenuClass}`);
-    const activeMenuHeight: number = activeMenuElement.offsetHeight;
-
-    // Set Height
-    infoWindow.current.style.height = `${activeMenuHeight}px`;
-
-    // Aria
-    button.setAttribute("aria-expanded", "true");
-    infoWindow.current.setAttribute("aria-hidden", "false");
+    setExpandedList(expandedListTemp);
+    setChildHeight(childRefs.current[index].offsetHeight);
   }
 
-  const closeWindow = (button: any) => {
-    // Inactivate Arrow
-    button.classList.remove(`${styles.buttonActive}`);
-
-    // Reset Height
-    infoWindow.current.style.height = `0px`;
-
-    // Reset State
-    menuNumber.current = -1;
-
-    // Aria
-    button.setAttribute("aria-expanded", "false");
-    infoWindow.current.setAttribute("aria-hidden", "true");
+  const setRef = (element: any, refList: any) => {
+    // Conditional prevents filling refLists with null on unmount / remount - LM
+    if (refList.length >= sectionTitles.length) return;
+    return refList.push(element);
   }
 
-  return (<>
-    <div className={styles.buttonContainer}>
-      {mainMenu.map((item, index) => (
-        <button key={index} aria-expanded="false" aria-controls="menu-window" data-index={index} onClick={handleClick} className={styles.button}>
-          <div className={styles.arrow}>▶</div>{item}
-        </button>
+  return (
+    <div className={`${styles.container} ${blockClass ? `${styles.container}--${blockClass}` : ``}`}>
+      {sectionTitles.map((section, index) => (
+        <div key={`wrapper-${index}`}
+          className={`${styles.buttonWindowWrapper} ${blockClass ? `${styles.buttonWindowWrapper}--${blockClass}` : ``}`}>
+          <button onClick={() => handleClick(index)}
+            aria-expanded={expandedList[index] ? "true" : "false"}
+            aria-controls={`window-${index}`}
+            aria-label={`${section.text}`}
+            className={`${styles.button} ${blockClass ? `${styles.button}--${blockClass}` : ``}`}>
+            <div className={`${styles.arrow} ${blockClass ? `${styles.arrow}--${blockClass}` : ``}`}>
+              ▶
+            </div>
+            <div className={`${styles.buttonText} ${blockClass ? `${styles.buttonText}--${blockClass}` : ``}`}>
+              {section.text}
+            </div>
+          </button>
+          <div id={`window-${index}`}
+            aria-hidden={expandedList[index] ? "false" : "true"}
+            className={`${styles.window} ${blockClass ? `${styles.window}--${blockClass}` : ``}`}
+            style={{ height: expandedList[index] ? `${childHeight}px` : `0px` }}>
+            <div ref={(element: any) => setRef(element, childRefs.current)}
+              className={`${styles.childWrapper} ${blockClass ? `${styles.childWrapper}--${blockClass}` : ``}`}>
+              {children[index]}
+            </div>
+          </div>
+        </div>
       ))}
     </div>
-    <div ref={infoWindow} id="menu-window" aria-hidden="true" aria-live="polite" style={{ height: "0px" }} className={styles.menuContainer}>
-      {activeChild}
-    </div>
-  </>);
+  );
 }
 
 Accordion.schema = {
-  title: "Footer Expand",
+  title: "Accordion",
   description: "",
   type: "object",
   properties: {
-
+    openFirstChild: {
+      title: "Open First Child On Load?",
+      type: "boolean"
+    },
+    sectionTitles: {
+      title: "Titles",
+      type: "array",
+      items: {
+        properties: {
+          __editorItemTitle: {
+            title: "Site Editor Name",
+            type: "string"
+          },
+          text: {
+            title: "Text",
+            type: "string",
+            widget: { "ui:widget": "textarea" }
+          }
+        }
+      }
+    }
   }
 }
 
